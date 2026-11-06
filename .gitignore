@@ -1,0 +1,11 @@
+# Referencias de diseño (incluyen capturas personales del grupo de Steam)
+References/
+
+# Configuración local de Claude Code y de Obsidian
+.claude/
+.obsidian/
+
+# Archivos del sistema
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,525 @@
+/* Estilos mínimos del prototipo funcional.
+   El diseño definitivo (pixel art u otro) se hará cuando la funcionalidad esté validada. */
+
+:root {
+  --bg: #f4f4f7;
+  --surface: #ffffff;
+  --text: #1e202c;
+  --muted: #5d5f6e;
+  --border: #d4d5de;
+  --accent: #60519b;
+  --ok: #2e7d32;
+  --warn: #b26a00;
+  --danger: #c62828;
+  --radius: 6px;
+  --gap: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* El atributo hidden siempre gana, aunque el elemento tenga otro display. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* --- Estructura general --- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  padding: 12px max(16px, calc((100% - 1200px) / 2));
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--gap);
+  display: grid;
+  gap: var(--gap);
+}
+
+section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--gap);
+  min-width: 0;
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.hint,
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.hint {
+  margin: 0 0 12px;
+}
+
+.empty {
+  color: var(--muted);
+  font-style: italic;
+  list-style: none;
+}
+
+/* --- Controles --- */
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+input,
+select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  min-width: 0;
+  width: 100%;
+}
+
+button,
+.file-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  flex-direction: row;
+}
+
+button.secondary,
+.file-btn.secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+button.small {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+a {
+  color: var(--accent);
+}
+
+.year-picker {
+  flex-direction: row;
+  align-items: center;
+}
+
+.year-picker select {
+  width: auto;
+}
+
+/* --- Formularios --- */
+
+#purchase-form {
+  display: grid;
+  gap: 12px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.form-actions,
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-form {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cover-preview {
+  max-width: 320px;
+}
+
+.warning {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 4px solid var(--warn);
+  background: #fff4e0;
+  color: #5c3900;
+}
+
+.status {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.status.error {
+  border-color: var(--danger);
+}
+
+.error {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 4px solid var(--danger);
+  background: #fdecec;
+  color: #7a1010;
+}
+
+/* --- Resumen por miembro --- */
+
+.family-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.stat strong {
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.member-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.member-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  border-top-width: 4px;
+}
+
+.member-card.status-met {
+  border-top-color: var(--ok);
+}
+
+.member-card.status-pending {
+  border-top-color: var(--warn);
+}
+
+.member-card.status-missed {
+  border-top-color: var(--danger);
+  background: #fdf3f3;
+}
+
+.member-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatar-fallback {
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.member-total {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.status-met .progress span {
+  background: var(--ok);
+}
+
+.status-text {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.status-met .status-text {
+  color: var(--ok);
+}
+
+.status-pending .status-text {
+  color: var(--warn);
+}
+
+.status-missed .status-text {
+  color: var(--danger);
+}
+
+/* --- Portadas y compras --- */
+
+.cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 460 / 215;
+  object-fit: cover;
+  border-radius: var(--radius);
+  max-width: 100%;
+}
+
+.cover-fallback {
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 320px);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.game-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-card .cover {
+  border-radius: 0;
+}
+
+.game-body {
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.game-title {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.game-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Planeados --- */
+
+.planned-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.planned-item {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+}
+
+.planned-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.planned-info a {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* --- Historial --- */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+td .cell-amount {
+  display: block;
+  font-weight: 600;
+}
+
+td .cell-status {
+  font-size: 0.8rem;
+}
+
+td.status-met .cell-status {
+  color: var(--ok);
+}
+
+td.status-pending .cell-status {
+  color: var(--warn);
+}
+
+td.status-missed {
+  background: #fdf3f3;
+}
+
+td.status-missed .cell-status {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* --- Responsivo (prioridad PC, adaptado a móvil) --- */
+
+@media (max-width: 900px) {
+  .member-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inline-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .member-grid,
+  .form-grid,
+  .inline-form,
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .planned-item {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .planned-item .row-actions {
+    grid-column: 1 / -1;
+  }
+}

@@ -1,0 +1,23 @@
+// Configuración general de la aplicación: miembros y reglas de la familia.
+// Se expone en window.FS (Family Steam) para que los demás scripts la usen.
+window.FS = window.FS || {};
+
+FS.config = {
+  // Cuota mínima anual por miembro, en soles peruanos.
+  minYearlyQuota: 400,
+
+  // Moneda y formato regional para mostrar montos.
+  currency: 'PEN',
+  locale: 'es-PE',
+
+  // Miembros del grupo familiar (nombres tal como aparecen en Steam).
+  // "avatar" apunta a assets/avatars/; si no existe, se muestran iniciales.
+  members: [
+    { id: 'thewolf', name: 'THE WOLF', avatar: 'assets/avatars/thewolf.png' },
+    { id: 'phanlu', name: 'Phan Lu', avatar: 'assets/avatars/phanlu.png' },
+    { id: 'poetahalley', name: 'El poeta Halley', avatar: 'assets/avatars/poetahalley.png' },
+    { id: 'zabatiel', name: 'Zabatiel', avatar: 'assets/avatars/zabatiel.png' },
+    { id: 'yeonat', name: 'yeonat', avatar: 'assets/avatars/yeonat.png' },
+    { id: 'piratadesopa', name: 'Piratadesopa', avatar: 'assets/avatars/piratadesopa.png' }
+  ]
+};
