@@ -17,6 +17,18 @@ FS.config = {
   // Vacía = no se consulta: la portada se intenta por la ruta antigua o se pega a mano.
   steamWorkerUrl: 'https://hidden-recipe-967ffamily-steam-steam.wolf-mygamess.workers.dev/',
 
+  // Paletas de colores que cada visitante puede elegir (los colores están en css/styles.css,
+  // en los bloques [data-theme="..."]). La elección se guarda solo en su navegador.
+  themes: [
+    { id: 'morada', name: 'Morada' },
+    { id: 'nocturna', name: 'Nocturna' },
+    { id: 'dorada', name: 'Dorada' },
+    { id: 'turquesa', name: 'Turquesa' },
+    { id: 'cobalto', name: 'Cobalto' },
+    { id: 'lavanda', name: 'Lavanda (clara)' }
+  ],
+  defaultTheme: 'morada',
+
   // Miembros del grupo familiar (nombres tal como aparecen en Steam).
   // "avatar" apunta a assets/avatars/; si no existe, se muestran iniciales.
   members: [

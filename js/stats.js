@@ -45,7 +45,6 @@ FS.stats = (function () {
         games: own.length,
         surplus: met ? round2(total - quota) : 0,
         missing: met ? 0 : round2(quota - total),
-        progress: Math.min(total / quota, 1),
         status
       };
     });

@@ -4,140 +4,191 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Family Steam</title>
-  <link rel="stylesheet" href="css/styles.css?v=2026110702">
+  <!-- Aplica la paleta elegida antes de pintar la página (evita un parpadeo de colores).
+       La clave "fs-theme" es la misma que usa js/theme.js. -->
+  <script>
+    try {
+      const savedTheme = localStorage.getItem('fs-theme');
+      if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+    } catch (e) {
+      // Sin almacenamiento se usa la paleta por defecto.
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=Jersey+10&display=swap">
+  <link rel="stylesheet" href="css/styles.css?v=2026110701">
 </head>
 <body>
-  <header class="app-header">
-    <h1>Family Steam</h1>
-    <label id="year-picker" class="year-picker">
-      Año
-      <select id="year-select"></select>
-    </label>
-  </header>
-
-  <!-- Código familiar: se pide una sola vez por navegador, solo si las reglas lo exigen -->
-  <section id="access-section" class="access-gate" hidden>
-    <h2>Acceso familiar</h2>
-    <p class="hint">Escribe el código de la familia para ver y registrar las compras. Solo se pide una vez en este navegador.</p>
-    <form id="access-form" novalidate>
-      <div class="form-row">
-        <label for="access-code">Código familiar</label>
-        <input type="password" id="access-code" autocomplete="current-password" required>
+  <div class="shell">
+    <header class="app-header">
+      <div class="logo">
+        <span data-icon="controller" data-scale="4"></span>
+        <h1>Family Steam</h1>
       </div>
-      <p id="access-error" class="error" hidden></p>
-      <div class="form-actions">
-        <button type="submit" id="access-submit">Entrar</button>
+      <div class="header-tools">
+        <label id="year-picker" class="year-picker">
+          Año
+          <select id="year-select"></select>
+        </label>
+        <!-- Selector de colores: cada visitante elige su paleta (solo en su navegador) -->
+        <div class="theme-picker">
+          <button type="button" id="theme-toggle" class="secondary" aria-expanded="false" aria-controls="theme-panel">Colores</button>
+          <div id="theme-panel" class="theme-panel" hidden>
+            <h2>Colores de la página</h2>
+            <div id="theme-options" class="theme-options" role="radiogroup" aria-label="Paleta de colores"></div>
+            <p class="hint">Se guarda en este navegador y no cambia lo que ven los demás.</p>
+          </div>
+        </div>
       </div>
-    </form>
-  </section>
+    </header>
+    <div class="ground" aria-hidden="true"></div>
 
-  <main id="app-main">
-    <!-- Estado de conexión y errores generales -->
-    <p id="status" class="status" role="status" hidden></p>
-
-    <!-- Resumen del año: cuota mínima por miembro -->
-    <section id="summary-section">
-      <h2>Resumen <span id="summary-year"></span></h2>
-      <p class="hint">Cuota mínima por miembro: <strong id="min-quota"></strong> al año.</p>
-      <div id="family-totals" class="family-totals"></div>
-      <div id="member-cards" class="member-grid"></div>
-    </section>
-
-    <!-- Formulario para registrar una compra -->
-    <section id="purchase-form-section">
-      <h2 id="purchase-form-title">Registrar compra</h2>
-      <form id="purchase-form" novalidate>
-        <input type="hidden" id="purchase-id">
+    <!-- Código familiar: se pide una sola vez por navegador, solo si las reglas lo exigen -->
+    <section id="access-section" class="panel access-gate" hidden>
+      <div class="logo">
+        <span data-icon="controller" data-scale="3"></span>
+        <h2>Acceso familiar</h2>
+      </div>
+      <p class="hint">Escribe el código de la familia para ver y registrar las compras. Solo se pide una vez en este navegador.</p>
+      <form id="access-form" novalidate>
         <div class="form-row">
-          <label for="purchase-url">Enlace de Steam</label>
-          <input type="url" id="purchase-url" placeholder="https://store.steampowered.com/app/..." required>
+          <label for="access-code">Código familiar</label>
+          <input type="password" id="access-code" autocomplete="current-password" required>
         </div>
-        <div class="form-row">
-          <label for="purchase-title">Nombre del juego</label>
-          <input type="text" id="purchase-title" required>
-        </div>
-        <div class="form-row">
-          <label for="purchase-cover">URL de la portada (opcional)</label>
-          <input type="url" id="purchase-cover" placeholder="Se completa sola; si no, pega aquí la dirección de la imagen">
-          <span id="purchase-lookup" class="hint" hidden></span>
-        </div>
-        <div class="form-grid">
-          <div class="form-row">
-            <label for="purchase-member">Quién lo compró</label>
-            <select id="purchase-member" required></select>
-          </div>
-          <div class="form-row">
-            <label for="purchase-amount">Monto (S/)</label>
-            <input type="number" id="purchase-amount" min="0" step="0.01" required>
-          </div>
-          <div class="form-row">
-            <label for="purchase-date">Fecha de compra</label>
-            <input type="date" id="purchase-date" required>
-          </div>
-        </div>
-        <div id="purchase-preview" class="cover-preview" hidden></div>
-        <p id="purchase-warning" class="warning" hidden></p>
-        <p id="purchase-error" class="error" hidden></p>
+        <p id="access-error" class="error" hidden></p>
         <div class="form-actions">
-          <button type="submit" id="purchase-submit">Guardar compra</button>
-          <button type="button" id="purchase-cancel" class="secondary" hidden>Cancelar edición</button>
+          <button type="submit" id="access-submit">Entrar</button>
         </div>
       </form>
     </section>
 
-    <!-- Juegos planeados: quién va a comprar qué -->
-    <section id="planned-section">
-      <h2>Juegos planeados</h2>
-      <p class="hint">Anota lo que piensas comprar para que nadie lo repita.</p>
-      <form id="planned-form" class="inline-form" novalidate>
-        <input type="url" id="planned-url" placeholder="Enlace de Steam" aria-label="Enlace de Steam del juego planeado" required>
-        <input type="text" id="planned-title" placeholder="Nombre del juego" aria-label="Nombre del juego planeado" required>
-        <select id="planned-member" aria-label="Quién lo va a comprar" required></select>
-        <button type="submit">Agregar</button>
-      </form>
-      <p id="planned-warning" class="warning" hidden></p>
-      <p id="planned-error" class="error" hidden></p>
-      <ul id="planned-list" class="planned-list"></ul>
-    </section>
+    <main id="app-main">
+      <!-- Estado de conexión y errores generales -->
+      <p id="status" class="status" role="status" hidden></p>
 
-    <!-- Compras del año con filtros -->
-    <section id="purchases-section">
-      <h2>Compras <span id="purchases-year"></span></h2>
-      <div class="filters">
-        <label>
-          Miembro
-          <select id="filter-member"></select>
-        </label>
-        <label>
-          Buscar
-          <input type="search" id="filter-search" placeholder="Nombre del juego">
-        </label>
-      </div>
-      <div id="purchase-list" class="game-grid"></div>
-    </section>
+      <!-- Resumen del año: cuota mínima por miembro (la "party" de la familia) -->
+      <section id="summary-section" class="summary">
+        <div class="summary-head">
+          <div>
+            <h2>Resumen <span id="summary-year"></span></h2>
+            <p class="hint">Cuota mínima por miembro: <span id="min-quota"></span> al año.</p>
+          </div>
+          <div id="family-totals" class="family-totals"></div>
+        </div>
+        <div id="member-cards" class="party"></div>
+      </section>
 
-    <!-- Historial: cumplimiento por año -->
-    <section id="history-section">
-      <h2>Historial por año</h2>
-      <div class="table-wrap">
-        <table id="history-table"></table>
-      </div>
-    </section>
+      <div class="layout">
+        <!-- Formulario para registrar una compra -->
+        <section id="purchase-form-section" class="panel">
+          <div class="section-head">
+            <h2 id="purchase-form-title">Registrar compra</h2>
+          </div>
+          <form id="purchase-form" novalidate>
+            <input type="hidden" id="purchase-id">
+            <div class="form-row">
+              <label for="purchase-url">Enlace de Steam</label>
+              <input type="url" id="purchase-url" placeholder="https://store.steampowered.com/app/..." required>
+            </div>
+            <div class="form-row">
+              <label for="purchase-title">Nombre del juego</label>
+              <input type="text" id="purchase-title" required>
+            </div>
+            <div class="form-row">
+              <label for="purchase-cover">URL de la portada (opcional)</label>
+              <input type="url" id="purchase-cover" placeholder="Se completa sola desde Steam">
+              <span id="purchase-lookup" class="hint" hidden></span>
+            </div>
+            <div class="form-grid">
+              <div class="form-row">
+                <label for="purchase-member">Quién lo compró</label>
+                <select id="purchase-member" required></select>
+              </div>
+              <div class="form-row">
+                <label for="purchase-amount">Monto (S/)</label>
+                <input type="number" id="purchase-amount" min="0" step="0.01" required>
+              </div>
+              <div class="form-row">
+                <label for="purchase-date">Fecha de compra</label>
+                <input type="date" id="purchase-date" required>
+              </div>
+            </div>
+            <div id="purchase-preview" class="cover-preview" hidden></div>
+            <p id="purchase-warning" class="warning" hidden></p>
+            <p id="purchase-error" class="error" hidden></p>
+            <div class="form-actions">
+              <button type="submit" id="purchase-submit">Guardar compra</button>
+              <button type="button" id="purchase-cancel" class="secondary" hidden>Cancelar edición</button>
+            </div>
+          </form>
+        </section>
 
-    <!-- Copia de seguridad de los datos -->
-    <section id="backup-section">
-      <h2>Datos</h2>
-      <p class="hint">Descarga una copia de seguridad o importa compras desde un archivo JSON (se agregan, no se borra nada).</p>
-      <div class="form-actions">
-        <button type="button" id="export-btn" class="secondary">Exportar JSON</button>
-        <label class="file-btn secondary">
-          Importar JSON
-          <input type="file" id="import-input" accept="application/json" hidden>
-        </label>
+        <!-- Juegos planeados: quién va a comprar qué -->
+        <section id="planned-section" class="panel">
+          <div class="section-head">
+            <div>
+              <h2>Juegos planeados</h2>
+              <p class="hint">Anota lo que piensas comprar para que nadie lo repita.</p>
+            </div>
+          </div>
+          <form id="planned-form" class="inline-form" novalidate>
+            <input type="url" id="planned-url" placeholder="Enlace de Steam" aria-label="Enlace de Steam del juego planeado" required>
+            <input type="text" id="planned-title" placeholder="Nombre del juego" aria-label="Nombre del juego planeado" required>
+            <select id="planned-member" aria-label="Quién lo va a comprar" required></select>
+            <button type="submit">Agregar</button>
+          </form>
+          <p id="planned-warning" class="warning" hidden></p>
+          <p id="planned-error" class="error" hidden></p>
+          <ul id="planned-list" class="planned-list"></ul>
+        </section>
+
+        <!-- Compras del año con filtros -->
+        <section id="purchases-section" class="panel">
+          <div class="section-head">
+            <h2>Compras <span id="purchases-year"></span></h2>
+            <div class="filters">
+              <label>
+                Miembro
+                <select id="filter-member"></select>
+              </label>
+              <label>
+                Buscar
+                <input type="search" id="filter-search" placeholder="Nombre del juego">
+              </label>
+            </div>
+          </div>
+          <div id="purchase-list" class="game-grid"></div>
+        </section>
       </div>
-      <p id="backup-message" class="hint" hidden></p>
-    </section>
-  </main>
+
+      <!-- Historial: cumplimiento por año -->
+      <section id="history-section" class="panel">
+        <div class="section-head">
+          <h2>Historial por año</h2>
+        </div>
+        <div class="table-wrap">
+          <table id="history-table"></table>
+        </div>
+      </section>
+
+      <!-- Copia de seguridad de los datos -->
+      <section id="backup-section" class="panel">
+        <div>
+          <h2>Datos</h2>
+          <p class="hint">Descarga una copia de seguridad o importa compras desde un archivo JSON (se agregan, no se borra nada).</p>
+        </div>
+        <div class="row-actions">
+          <button type="button" id="export-btn" class="secondary">Exportar JSON</button>
+          <label class="file-btn secondary">
+            Importar JSON
+            <input type="file" id="import-input" accept="application/json">
+          </label>
+        </div>
+        <p id="backup-message" class="hint" hidden></p>
+      </section>
+    </main>
+  </div>
 
   <!-- Firebase (versión "compat", usable con scripts clásicos) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -146,12 +197,14 @@
 
   <!-- Scripts de la app (clásicos, sin módulos). El parámetro ?v= evita que el navegador
        use una versión vieja en caché: cambiarlo en cada publicación. -->
-  <script src="js/firebase-config.js?v=2026110702"></script>
-  <script src="js/config.js?v=2026110702"></script>
-  <script src="js/utils.js?v=2026110702"></script>
-  <script src="js/steam.js?v=2026110702"></script>
-  <script src="js/storage.js?v=2026110702"></script>
-  <script src="js/stats.js?v=2026110702"></script>
-  <script src="js/app.js?v=2026110702"></script>
+  <script src="js/firebase-config.js?v=2026110701"></script>
+  <script src="js/config.js?v=2026110701"></script>
+  <script src="js/utils.js?v=2026110701"></script>
+  <script src="js/icons.js?v=2026110701"></script>
+  <script src="js/theme.js?v=2026110701"></script>
+  <script src="js/steam.js?v=2026110701"></script>
+  <script src="js/storage.js?v=2026110701"></script>
+  <script src="js/stats.js?v=2026110701"></script>
+  <script src="js/app.js?v=2026110701"></script>
 </body>
 </html>

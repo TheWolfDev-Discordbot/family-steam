@@ -1,6 +1,9 @@
 # Referencias de diseño (incluyen capturas personales del grupo de Steam)
 References/
 
+# Muestrarios y pruebas de diseño (solo locales)
+design/
+
 # Configuración local de Claude Code y de Obsidian
 .claude/
 .obsidian/

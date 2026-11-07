@@ -2,6 +2,7 @@
 (function () {
   const { formatMoney, round2, todayIso, yearOf, formatDate, newId, normalize, getMember, initials } = FS.utils;
   const currentYear = new Date().getFullYear();
+  const QUOTA_BLOCKS = 10; // bloques de la barra de cuota (cada uno vale cuota / 10)
 
   // Estado en memoria (copia de lo guardado) y estado de la interfaz.
   let data = { purchases: [], planned: [] };
@@ -18,7 +19,9 @@
     plannedTitleAuto: true,
     confirmedDuplicateKey: null, // aviso de duplicado ya confirmado (compra)
     confirmedPlannedKey: null, // aviso de duplicado ya confirmado (planeado)
-    confirmDeleteId: null // registro con confirmación de borrado abierta
+    confirmDeleteId: null, // registro con confirmación de borrado abierta
+    dataReady: false, // ya llegaron los datos de Firebase al menos una vez
+    animatedYear: null // año cuya barra de cuota ya se animó (solo se anima al cambiar de año)
   };
 
   // Atajo para obtener elementos por id.
@@ -47,6 +50,7 @@
   }
 
   // Avatar del miembro con iniciales como respaldo si la imagen no existe.
+  // El tamaño lo decide el contenedor (tarjeta del resumen o tarjeta de juego).
   function avatar(member) {
     const fallback = el('span', { className: 'avatar avatar-fallback', 'aria-hidden': 'true' }, initials(member.name));
     if (!member.avatar) return fallback;
@@ -98,42 +102,63 @@
     $('min-quota').textContent = formatMoney(FS.config.minYearlyQuota);
 
     const totals = FS.stats.familyTotals(data.purchases, ui.year);
+    const summaries = FS.stats.memberSummaries(data.purchases, ui.year, currentYear);
+    const metCount = summaries.filter((s) => s.status === 'met').length;
+    const stat = (value, label) => el('div', { className: 'stat' }, [el('strong', {}, value), el('span', { className: 'stat-label' }, label)]);
     $('family-totals').replaceChildren(
-      el('div', { className: 'stat' }, [el('span', { className: 'stat-label' }, 'Invertido por la familia'), el('strong', {}, formatMoney(totals.total))]),
-      el('div', { className: 'stat' }, [el('span', { className: 'stat-label' }, 'Juegos comprados'), el('strong', {}, totals.games)])
+      stat(formatMoney(totals.total), 'invertidos por la familia'),
+      stat(totals.games, totals.games === 1 ? 'juego comprado' : 'juegos comprados'),
+      stat(`${metCount} de ${summaries.length}`, 'cumplieron la cuota')
     );
 
-    const summaries = FS.stats.memberSummaries(data.purchases, ui.year, currentYear);
-    $('member-cards').replaceChildren(...summaries.map(memberCard));
+    // Las barras se llenan con animación solo cuando llegan los datos o se cambia de año,
+    // no cada vez que llega un cambio de datos.
+    const cards = $('member-cards');
+    cards.classList.toggle('animate', ui.dataReady && ui.animatedYear !== ui.year);
+    if (ui.dataReady) ui.animatedYear = ui.year;
+    cards.replaceChildren(...summaries.map(memberCard));
+  }
+
+  // Ícono y texto del estado de la cuota.
+  function statusLine(s) {
+    const [icon, text] = {
+      met: ['trophy', 'Cumplió la cuota'],
+      pending: ['hourglass', `Faltan ${formatMoney(s.missing)}`],
+      upcoming: [null, 'Año por empezar'],
+      missed: ['warning', `No cumplió. Faltaron ${formatMoney(s.missing)}`]
+    }[s.status];
+    return el('p', { className: 'status-text' }, [icon && FS.icons.create(icon), el('span', {}, text)]);
+  }
+
+  // Barra de cuota por bloques: cada bloque se llena en proporción a su parte de la cuota.
+  function quotaBar(s) {
+    const blockValue = FS.config.minYearlyQuota / QUOTA_BLOCKS;
+    const blocks = Array.from({ length: QUOTA_BLOCKS }, (_, i) => {
+      const fill = Math.min(Math.max(s.total / blockValue - i, 0), 1);
+      return el('i', { style: `--i: ${i}; --fill: ${Math.round(fill * 100)}%` });
+    });
+    return el('div', {
+      className: 'quota',
+      role: 'progressbar',
+      'aria-valuemin': 0,
+      'aria-valuemax': FS.config.minYearlyQuota,
+      'aria-valuenow': Math.min(s.total, FS.config.minYearlyQuota),
+      'aria-label': `Progreso de ${s.member.name} hacia la cuota`
+    }, blocks);
   }
 
   // Tarjeta de un miembro con su progreso hacia la cuota.
   function memberCard(s) {
-    const statusText = {
-      met: s.surplus > 0 ? `Cumplió · Excedente ${formatMoney(s.surplus)}` : 'Cumplió la cuota',
-      pending: `Le faltan ${formatMoney(s.missing)}`,
-      upcoming: `Año por empezar · Cuota ${formatMoney(s.missing)}`,
-      missed: `No cumplió · Faltaron ${formatMoney(s.missing)}`
-    }[s.status];
-
     return el('article', { className: `member-card status-${s.status}` }, [
       el('div', { className: 'member-head' }, [
         avatar(s.member),
-        el('div', {}, [
-          el('h3', {}, s.member.name),
-          el('span', { className: 'muted' }, `${s.games} ${s.games === 1 ? 'juego' : 'juegos'}`)
-        ])
+        el('span', { className: 'muted' }, `${s.games} ${s.games === 1 ? 'juego' : 'juegos'}`)
       ]),
+      el('h3', {}, s.member.name),
       el('p', { className: 'member-total' }, formatMoney(s.total)),
-      el('div', {
-        className: 'progress',
-        role: 'progressbar',
-        'aria-valuemin': 0,
-        'aria-valuemax': FS.config.minYearlyQuota,
-        'aria-valuenow': s.total,
-        'aria-label': `Progreso de ${s.member.name} hacia la cuota`
-      }, el('span', { style: `width: ${Math.round(s.progress * 100)}%` })),
-      el('p', { className: 'status-text' }, statusText)
+      quotaBar(s),
+      statusLine(s),
+      s.surplus > 0 && el('p', { className: 'bonus-text' }, `Excedente: ${formatMoney(s.surplus)}`)
     ]);
   }
 
@@ -164,7 +189,7 @@
     return el('li', { className: 'planned-item' }, [
       cover(item.appId, item.title, item.coverUrl),
       el('div', { className: 'planned-info' }, [
-        el('a', { href: FS.steam.storeUrl(item.appId), target: '_blank', rel: 'noopener' }, item.title),
+        el('a', { className: 'game-title', href: FS.steam.storeUrl(item.appId), target: '_blank', rel: 'noopener' }, item.title),
         el('span', { className: 'muted' }, `Lo comprará ${member.name}`)
       ]),
       el('div', { className: 'row-actions' }, actions)
@@ -184,7 +209,7 @@
       const filtered = ui.filterMember !== 'all' || query;
       container.replaceChildren(el('p', { className: 'empty' }, filtered
         ? 'Ninguna compra coincide con los filtros.'
-        : `Todavía no hay compras en ${ui.year}. Registra la primera con el formulario de arriba.`));
+        : `Todavía no hay compras en ${ui.year}. Registra la primera con el formulario "Registrar compra".`));
       return;
     }
     container.replaceChildren(...items.map(purchaseCard));
@@ -209,8 +234,8 @@
       el('div', { className: 'game-body' }, [
         el('a', { className: 'game-title', href: FS.steam.storeUrl(p.appId), target: '_blank', rel: 'noopener' }, p.title),
         el('div', { className: 'game-meta' }, [
-          el('span', {}, member.name),
-          el('strong', {}, formatMoney(p.amount))
+          el('span', { className: 'buyer' }, [avatar(member), member.name]),
+          el('span', { className: 'amount' }, formatMoney(p.amount))
         ]),
         el('span', { className: 'muted' }, formatDate(p.date)),
         el('div', { className: 'row-actions' }, actions)
@@ -681,6 +706,7 @@
         clearTimeout(slowTimer);
         showStatus('');
         data = newData;
+        ui.dataReady = true;
         render();
       },
       (error) => {
@@ -696,6 +722,8 @@
   }
 
   function init() {
+    FS.icons.fillSlots();
+    FS.theme.init();
     fillMemberSelect($('purchase-member'), false);
     fillMemberSelect($('planned-member'), false);
     fillMemberSelect($('filter-member'), true);
