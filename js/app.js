@@ -112,6 +112,7 @@
     const statusText = {
       met: s.surplus > 0 ? `Cumplió · Excedente ${formatMoney(s.surplus)}` : 'Cumplió la cuota',
       pending: `Le faltan ${formatMoney(s.missing)}`,
+      upcoming: `Año por empezar · Cuota ${formatMoney(s.missing)}`,
       missed: `No cumplió · Faltaron ${formatMoney(s.missing)}`
     }[s.status];
 
@@ -229,7 +230,7 @@
     const rows = years.map((year) => {
       const summaries = FS.stats.memberSummaries(data.purchases, year, currentYear);
       const totals = FS.stats.familyTotals(data.purchases, year);
-      const label = { met: 'Cumplió', pending: 'En curso', missed: 'No cumplió' };
+      const label = { met: 'Cumplió', pending: 'En curso', upcoming: 'Por empezar', missed: 'No cumplió' };
       return el('tr', {}, [
         el('th', { scope: 'row' }, year),
         ...summaries.map((s) => el('td', { className: `status-${s.status}` }, [

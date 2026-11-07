@@ -6,6 +6,9 @@ FS.config = {
   // Cuota mínima anual por miembro, en soles peruanos.
   minYearlyQuota: 400,
 
+  // Años que siempre aparecen en el selector (además de cualquier año con compras).
+  yearRange: { from: 2025, to: 2027 },
+
   // Moneda y formato regional para mostrar montos.
   currency: 'PEN',
   locale: 'es-PE',

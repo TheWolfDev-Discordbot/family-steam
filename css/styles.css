@@ -523,3 +523,14 @@ td.status-missed .cell-status {
     grid-column: 1 / -1;
   }
 }
+
+/* --- Año futuro (aún no empieza) --- */
+
+.member-card.status-upcoming {
+  border-top-color: var(--border);
+}
+
+.status-upcoming .status-text,
+td.status-upcoming .cell-status {
+  color: var(--muted);
+}
