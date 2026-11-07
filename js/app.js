@@ -11,6 +11,10 @@
     search: '',
     editingId: null, // id de la compra que se está editando
     titleAuto: true, // el nombre del juego se rellenó solo desde el enlace
+    coverAuto: true, // la URL de portada la rellena Steam (no el usuario)
+    lookupAppId: null, // último juego del que se pidieron datos a Steam
+    pendingLookupAppId: null, // juego cuya consulta a Steam aún no responde
+    previewToken: 0, // identifica la vista previa vigente de la portada
     plannedTitleAuto: true,
     confirmedDuplicateKey: null, // aviso de duplicado ya confirmado (compra)
     confirmedPlannedKey: null, // aviso de duplicado ya confirmado (planeado)
@@ -51,11 +55,13 @@
     return img;
   }
 
-  // Portada del juego con un recuadro de texto si no carga.
-  function cover(appId, title) {
+  // Portada del juego: usa la URL guardada; si no hay, prueba la ruta antigua de Steam.
+  // Si la imagen no carga, se muestra un recuadro con el nombre.
+  function cover(appId, title, coverUrl) {
     const fallback = el('div', { className: 'cover cover-fallback' }, title);
-    if (!appId) return fallback;
-    const img = el('img', { className: 'cover', src: FS.steam.coverUrl(appId), alt: `Portada de ${title}`, loading: 'lazy' });
+    const src = coverUrl || (appId ? FS.steam.legacyCoverUrl(appId) : '');
+    if (!src) return fallback;
+    const img = el('img', { className: 'cover', src, alt: `Portada de ${title}`, loading: 'lazy', referrerpolicy: 'no-referrer' });
     img.addEventListener('error', () => img.replaceWith(fallback));
     return img;
   }
@@ -155,7 +161,7 @@
         ];
 
     return el('li', { className: 'planned-item' }, [
-      cover(item.appId, item.title),
+      cover(item.appId, item.title, item.coverUrl),
       el('div', { className: 'planned-info' }, [
         el('a', { href: FS.steam.storeUrl(item.appId), target: '_blank', rel: 'noopener' }, item.title),
         el('span', { className: 'muted' }, `Lo comprará ${member.name}`)
@@ -198,7 +204,7 @@
         ];
 
     return el('article', { className: 'game-card' }, [
-      cover(p.appId, p.title),
+      cover(p.appId, p.title, p.coverUrl),
       el('div', { className: 'game-body' }, [
         el('a', { className: 'game-title', href: FS.steam.storeUrl(p.appId), target: '_blank', rel: 'noopener' }, p.title),
         el('div', { className: 'game-meta' }, [
@@ -241,25 +247,73 @@
   // Formulario de compra
   // ---------------------------------------------------------------------------
 
-  // Al pegar el enlace: rellena el nombre y muestra la portada.
+  const MANUAL_COVER_HINT = 'No se encontró la portada automáticamente. En la página del juego en Steam, haz clic derecho sobre la portada → "Copiar dirección de imagen" y pégala en el campo de arriba.';
+
+  // Al pegar el enlace: rellena el nombre, muestra la portada y consulta Steam.
   function onPurchaseUrlInput() {
     const parsed = FS.steam.parseStoreUrl($('purchase-url').value);
-    const preview = $('purchase-preview');
     ui.confirmedDuplicateKey = null;
     $('purchase-submit').textContent = ui.editingId ? 'Guardar cambios' : 'Guardar compra';
     setMessage($('purchase-warning'), '');
 
     if (!parsed) {
-      preview.hidden = true;
+      ui.lookupAppId = null;
+      $('purchase-preview').hidden = true;
+      setMessage($('purchase-lookup'), '');
       return;
     }
     if (ui.titleAuto && parsed.titleGuess) $('purchase-title').value = parsed.titleGuess;
-    preview.replaceChildren(cover(parsed.appId, $('purchase-title').value || 'Juego'));
-    preview.hidden = false;
+    updatePurchasePreview();
 
     // Avisa en cuanto se pega el enlace, sin esperar a guardar.
     const warning = purchaseDuplicateWarning(parsed.appId);
     if (warning) setMessage($('purchase-warning'), warning);
+
+    if (ui.lookupAppId !== parsed.appId) lookupPurchaseInfo(parsed.appId);
+  }
+
+  // Pide al Worker el nombre exacto, la portada y el precio del juego.
+  // Solo rellena los campos que el usuario no escribió a mano.
+  async function lookupPurchaseInfo(appId) {
+    ui.lookupAppId = appId;
+    ui.pendingLookupAppId = appId;
+    if (FS.config.steamWorkerUrl) setMessage($('purchase-lookup'), 'Buscando datos del juego en Steam…');
+    const info = await FS.steam.fetchAppInfo(appId);
+
+    // Si mientras tanto se pegó otro enlace, esta respuesta ya no sirve.
+    if (ui.lookupAppId !== appId) return;
+    ui.pendingLookupAppId = null;
+    setMessage($('purchase-lookup'), '');
+    if (!info) {
+      updatePurchasePreview();
+      return;
+    }
+
+    if (ui.titleAuto && info.name) $('purchase-title').value = info.name;
+    if (ui.coverAuto && info.headerImage) $('purchase-cover').value = info.headerImage;
+    if (!ui.editingId && !$('purchase-amount').value && info.price > 0) $('purchase-amount').value = info.price;
+    updatePurchasePreview();
+  }
+
+  // Vuelve a pintar la portada del formulario con los valores actuales.
+  function updatePurchasePreview() {
+    const parsed = FS.steam.parseStoreUrl($('purchase-url').value);
+    const preview = $('purchase-preview');
+    if (!parsed) {
+      preview.hidden = true;
+      return;
+    }
+    const image = cover(parsed.appId, $('purchase-title').value || 'Juego', $('purchase-cover').value.trim());
+    // Si la imagen no carga, se explica cómo pegarla a mano. Se ignoran los errores
+    // de vistas previas antiguas y los que llegan mientras Steam aún está respondiendo.
+    const token = ++ui.previewToken;
+    if (image.tagName === 'IMG') {
+      image.addEventListener('error', () => {
+        if (token === ui.previewToken && ui.lookupAppId !== ui.pendingLookupAppId) setMessage($('purchase-lookup'), MANUAL_COVER_HINT);
+      });
+    }
+    preview.replaceChildren(image);
+    preview.hidden = false;
   }
 
   // Texto de aviso si el juego ya fue comprado o está planeado por otra persona.
@@ -305,7 +359,12 @@
       return;
     }
 
-    const record = { id: ui.editingId || newId(), appId: parsed.appId, title, memberId, amount, date };
+    const coverUrl = $('purchase-cover').value.trim();
+    if (coverUrl && !/^https:\/\/\S+$/i.test(coverUrl)) {
+      return setMessage(errorNode, 'La URL de la portada debe empezar con https:// (o deja el campo vacío).');
+    }
+
+    const record = { id: ui.editingId || newId(), appId: parsed.appId, title, memberId, amount, date, coverUrl };
 
     try {
       if (ui.editingId) {
@@ -335,8 +394,12 @@
     $('purchase-cancel').hidden = true;
     setMessage($('purchase-warning'), '');
     setMessage($('purchase-error'), '');
+    setMessage($('purchase-lookup'), '');
     ui.editingId = null;
     ui.titleAuto = true;
+    ui.coverAuto = true;
+    ui.lookupAppId = null;
+    ui.pendingLookupAppId = null;
     ui.confirmedDuplicateKey = null;
   }
 
@@ -351,6 +414,8 @@
     $('purchase-member').value = p.memberId;
     $('purchase-amount').value = p.amount;
     $('purchase-date').value = p.date;
+    $('purchase-cover').value = p.coverUrl || '';
+    ui.coverAuto = !p.coverUrl;
     $('purchase-form-title').textContent = `Editar compra: ${p.title}`;
     $('purchase-submit').textContent = 'Guardar cambios';
     $('purchase-cancel').hidden = false;
@@ -365,6 +430,8 @@
     $('purchase-url').value = FS.steam.storeUrl(item.appId);
     $('purchase-title').value = item.title;
     $('purchase-member').value = item.memberId;
+    $('purchase-cover').value = item.coverUrl || '';
+    ui.coverAuto = !item.coverUrl;
     onPurchaseUrlInput();
     focusPurchaseForm();
     $('purchase-amount').focus();
@@ -395,11 +462,19 @@
   // Juegos planeados
   // ---------------------------------------------------------------------------
 
-  function onPlannedUrlInput() {
+  async function onPlannedUrlInput() {
     const parsed = FS.steam.parseStoreUrl($('planned-url').value);
     ui.confirmedPlannedKey = null;
     setMessage($('planned-warning'), '');
-    if (parsed && ui.plannedTitleAuto && parsed.titleGuess) $('planned-title').value = parsed.titleGuess;
+    if (!parsed) return;
+    if (ui.plannedTitleAuto && parsed.titleGuess) $('planned-title').value = parsed.titleGuess;
+
+    // Nombre exacto desde Steam, si el enlace no cambió mientras tanto.
+    const info = await FS.steam.fetchAppInfo(parsed.appId);
+    const current = FS.steam.parseStoreUrl($('planned-url').value);
+    if (info && info.name && ui.plannedTitleAuto && current && current.appId === parsed.appId) {
+      $('planned-title').value = info.name;
+    }
   }
 
   async function onPlannedSubmit(event) {
@@ -428,8 +503,12 @@
       return setMessage($('planned-warning'), `${warning} Pulsa "Agregar" otra vez si quieres anotarlo igual.`);
     }
 
+    // La portada se guarda con el planeado para que se vea en la lista (puede faltar).
+    const info = await FS.steam.fetchAppInfo(parsed.appId);
+    const coverUrl = info ? info.headerImage : '';
+
     try {
-      await FS.storage.addPlanned({ id: newId(), appId: parsed.appId, title, memberId, createdAt: todayIso() });
+      await FS.storage.addPlanned({ id: newId(), appId: parsed.appId, title, memberId, coverUrl, createdAt: todayIso() });
     } catch (e) {
       return setMessage(errorNode, errorText(e));
     }
@@ -505,6 +584,11 @@
     $('purchase-form').addEventListener('submit', onPurchaseSubmit);
     $('purchase-url').addEventListener('input', onPurchaseUrlInput);
     $('purchase-title').addEventListener('input', () => { ui.titleAuto = false; });
+    $('purchase-cover').addEventListener('input', () => {
+      ui.coverAuto = false;
+      setMessage($('purchase-lookup'), '');
+      updatePurchasePreview();
+    });
     $('purchase-member').addEventListener('change', () => {
       // El aviso de "planeado por otra persona" depende de quién compra.
       ui.confirmedDuplicateKey = null;

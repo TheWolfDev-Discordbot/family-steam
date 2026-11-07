@@ -33,12 +33,18 @@ FS.storage = (function () {
   }
 
   // Campos que se guardan de cada tipo de registro (el id va en la ruta del documento).
+  // coverUrl es opcional: solo se guarda si tiene valor (Firestore no acepta undefined).
+  function withCover(fields, coverUrl) {
+    if (coverUrl) fields.coverUrl = String(coverUrl);
+    return fields;
+  }
+
   function purchaseFields(p) {
-    return { appId: String(p.appId), title: p.title, memberId: p.memberId, amount: Number(p.amount), date: p.date };
+    return withCover({ appId: String(p.appId), title: p.title, memberId: p.memberId, amount: Number(p.amount), date: p.date }, p.coverUrl);
   }
 
   function plannedFields(p) {
-    return { appId: String(p.appId), title: p.title, memberId: p.memberId, createdAt: p.createdAt };
+    return withCover({ appId: String(p.appId), title: p.title, memberId: p.memberId, createdAt: p.createdAt }, p.coverUrl);
   }
 
   // Escucha ambas colecciones y entrega el estado completo en cada cambio.

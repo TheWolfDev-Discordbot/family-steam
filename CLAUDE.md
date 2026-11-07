@@ -63,12 +63,12 @@ Página única (`index.html`). Firebase se carga con los SDK "compat" desde gsta
 - `js/firebase-config.js` → configuración pública del proyecto Firebase `family-steam`.
 - `js/config.js` → miembros (ids usados también en `firestore.rules`) y cuota mínima anual (400 PEN).
 - `js/utils.js` → formato de moneda/fechas, ids, helpers de miembros.
-- `js/steam.js` → extrae `appId` y nombre del enlace de la tienda; portada desde el CDN de Steam (`/steam/apps/<appId>/header.jpg`). No se usa la API de Steam (CORS).
+- `js/steam.js` → extrae `appId` y nombre del enlace de la tienda y consulta el Worker de Cloudflare (`tools/steam-worker.js`, URL en `FS.config.steamWorkerUrl`) para obtener nombre exacto, portada y precio. La API de Steam no admite CORS, por eso el Worker. Las portadas de juegos recientes llevan un hash en la ruta, así que la ruta antigua `/steam/apps/<appId>/header.jpg` solo sirve de respaldo para juegos viejos; si todo falla, el usuario pega la URL de la imagen a mano. El Worker se despliega pegando el archivo en el panel de Cloudflare (no hay CLI).
 - `js/storage.js` → **única** capa de datos sobre Firestore. Inicia sesión anónima (invisible) y expone `subscribe(onData, onError)` en tiempo real más escrituras async (`addPurchase`, `updatePurchase`, `deletePurchase`, `addPlanned`, `deletePlanned`, `importData`). Las escrituras no devuelven estado: la UI se actualiza vía la suscripción.
 - `js/stats.js` → cálculos puros: totales por año, excedente/faltante, estado `met` / `pending` (año en curso) / `missed` (año cerrado sin cumplir).
 - `js/app.js` → render de todas las secciones y manejo de formularios. Re-renderiza todo en cada snapshot.
 
-Modelo de datos (colecciones de Firestore, id del documento = id del registro): `purchases/{id}: {appId, title, memberId, amount, date}` y `planned/{id}: {appId, title, memberId, createdAt}`. El año se deriva de `date` (año calendario). Si se agrega un campo o un miembro, actualizar también `firestore.rules`, que valida campos y miembros.
+Modelo de datos (colecciones de Firestore, id del documento = id del registro): `purchases/{id}: {appId, title, memberId, amount, date, coverUrl?}` y `planned/{id}: {appId, title, memberId, createdAt, coverUrl?}`. El año se deriva de `date` (año calendario). Si se agrega un campo o un miembro, actualizar también `firestore.rules`, que valida campos y miembros.
 
 Reglas de negocio: un juego lo paga una sola persona; si el `appId` ya fue comprado o está planeado por otro miembro se muestra un aviso y se pide confirmar con un segundo envío; al registrar una compra se eliminan los planeados con el mismo `appId`.
 

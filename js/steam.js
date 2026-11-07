@@ -1,11 +1,13 @@
-// Utilidades para trabajar con enlaces de la tienda de Steam.
-// No se usa la API de Steam (bloquea peticiones desde el navegador por CORS):
-// el id y el nombre se obtienen del propio enlace y la portada del CDN público.
+// Utilidades para trabajar con enlaces y datos de la tienda de Steam.
+// La API de Steam bloquea peticiones desde el navegador (CORS), así que los datos
+// del juego (nombre exacto, portada, precio) se piden a un Worker de Cloudflare
+// propio (tools/steam-worker.js). Si no responde, se usa lo que trae el enlace.
 window.FS = window.FS || {};
 
 FS.steam = (function () {
   // Coincide con enlaces como https://store.steampowered.com/app/1145360/Hades/
   const APP_URL_PATTERN = /store\.steampowered\.com\/app\/(\d+)(?:\/([^/?#]+))?/i;
+  const LOOKUP_TIMEOUT_MS = 8000;
 
   // Devuelve { appId, titleGuess } o null si el enlace no es de un juego de Steam.
   function parseStoreUrl(url) {
@@ -27,8 +29,9 @@ FS.steam = (function () {
     return slug.replace(/_/g, ' ').trim();
   }
 
-  // Portada horizontal (460x215) del juego.
-  function coverUrl(appId) {
+  // Portada por la ruta antigua del CDN. Solo funciona con juegos publicados
+  // antes de que Steam añadiera un código único a la ruta; sirve de respaldo.
+  function legacyCoverUrl(appId) {
     return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
   }
 
@@ -37,5 +40,23 @@ FS.steam = (function () {
     return `https://store.steampowered.com/app/${appId}/`;
   }
 
-  return { parseStoreUrl, coverUrl, storeUrl };
+  // Consulta el Worker. Devuelve { name, headerImage, price } o null si no hay
+  // Worker configurado, no responde a tiempo o el juego no existe.
+  async function fetchAppInfo(appId) {
+    if (!FS.config.steamWorkerUrl) return null;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${FS.config.steamWorkerUrl}?appId=${encodeURIComponent(appId)}`, { signal: controller.signal });
+      if (!response.ok) return null;
+      const info = await response.json();
+      return { name: info.name || '', headerImage: info.headerImage || '', price: typeof info.price === 'number' ? info.price : null };
+    } catch (e) {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  return { parseStoreUrl, legacyCoverUrl, storeUrl, fetchAppInfo };
 })();

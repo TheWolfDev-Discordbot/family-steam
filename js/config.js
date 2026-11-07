@@ -10,6 +10,10 @@ FS.config = {
   currency: 'PEN',
   locale: 'es-PE',
 
+  // URL del Worker de Cloudflare que consulta la API de Steam (ver tools/steam-worker.js).
+  // Vacía = no se consulta: la portada se intenta por la ruta antigua o se pega a mano.
+  steamWorkerUrl: 'https://hidden-recipe-967ffamily-steam-steam.wolf-mygamess.workers.dev/',
+
   // Miembros del grupo familiar (nombres tal como aparecen en Steam).
   // "avatar" apunta a assets/avatars/; si no existe, se muestran iniciales.
   members: [
