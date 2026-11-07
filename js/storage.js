@@ -1,24 +1,29 @@
 // Capa de datos sobre Firebase Firestore. Toda lectura/escritura pasa por aquí.
 // Los datos se comparten entre todos los visitantes y llegan en tiempo real:
 // la interfaz se suscribe con subscribe() y se vuelve a pintar con cada cambio.
-// Antes de leer o escribir se inicia una sesión anónima (invisible para el usuario),
-// que las reglas de Firestore exigen para aceptar operaciones.
+// Antes de leer o escribir se inicia una sesión anónima (invisible para el usuario).
+// Las reglas de Firestore solo dejan operar a las sesiones registradas con el código
+// familiar (ver unlock()); Firebase recuerda la sesión, así que basta una vez por navegador.
 window.FS = window.FS || {};
 
 FS.storage = (function () {
   const COLLECTIONS = { purchases: 'purchases', planned: 'planned' };
+  const ACCESS_COLLECTION = 'access';
   const BATCH_LIMIT = 400; // Firestore admite hasta 500 operaciones por lote
 
+  let auth = null;
   let db = null;
   let readyPromise = null;
 
   // Inicializa Firebase y la sesión anónima una sola vez.
+  // Si el navegador ya tenía sesión anónima, Firebase reutiliza la misma.
   function ready() {
     if (!readyPromise) {
       readyPromise = (async () => {
         if (!window.firebase) throw new Error('No se pudo cargar Firebase. Revisa tu conexión a internet.');
         const app = firebase.initializeApp(FS.firebaseConfig);
-        await app.auth().signInAnonymously();
+        auth = app.auth();
+        await auth.signInAnonymously();
         db = app.firestore();
       })();
       // Si falla, se permite reintentar en la siguiente llamada.
@@ -49,13 +54,23 @@ FS.storage = (function () {
 
   // Escucha ambas colecciones y entrega el estado completo en cada cambio.
   // onData({ purchases, planned }) se llama cuando ambas colecciones respondieron.
-  // onError(error) se llama si no se puede conectar o leer.
+  // onError(error) se llama una sola vez si no se puede conectar o leer (por ejemplo,
+  // "permission-denied" si esta sesión aún no tiene el código familiar); en ese caso
+  // se cierran todas las escuchas y hay que volver a llamar a subscribe().
   function subscribe(onData, onError) {
     const state = { purchases: null, planned: null };
     const unsubscribers = [];
+    let failed = false;
 
+    const stop = () => unsubscribers.forEach((unsubscribe) => unsubscribe());
     const emit = () => {
       if (state.purchases && state.planned) onData({ purchases: state.purchases, planned: state.planned });
+    };
+    const fail = (error) => {
+      if (failed) return;
+      failed = true;
+      stop();
+      onError(error);
     };
 
     ready()
@@ -66,14 +81,23 @@ FS.storage = (function () {
               state[key] = snapshot.docs.map(toRecord);
               emit();
             },
-            onError
+            fail
           );
           unsubscribers.push(unsubscribe);
         });
       })
-      .catch(onError);
+      .catch(fail);
 
-    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+    return stop;
+  }
+
+  // --- Acceso ---
+
+  // Registra esta sesión con el código familiar. Las reglas solo aceptan el código
+  // correcto (si no, la promesa falla con "permission-denied").
+  async function unlock(code) {
+    await ready();
+    await db.collection(ACCESS_COLLECTION).doc(auth.currentUser.uid).set({ code: String(code) });
   }
 
   // --- Compras ---
@@ -125,5 +149,5 @@ FS.storage = (function () {
     return { purchases: (data.purchases || []).length, planned: (data.planned || []).length };
   }
 
-  return { subscribe, addPurchase, updatePurchase, deletePurchase, addPlanned, deletePlanned, importData };
+  return { subscribe, unlock, addPurchase, updatePurchase, deletePurchase, addPlanned, deletePlanned, importData };
 })();

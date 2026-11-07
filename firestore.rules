@@ -2,14 +2,26 @@ rules_version = '2';
 
 // Reglas de seguridad de Firestore para Family Steam.
 // Se pegan en Firebase Console → Firestore Database → Reglas → Publicar.
-// - Solo se aceptan operaciones con sesión anónima iniciada (la abre la página).
+// - La página abre una sesión anónima; esa sesión solo lee o escribe datos después de
+//   registrarse una vez con el código familiar (documento access/{uid}).
 // - Cada documento se valida: campos permitidos, tipos, miembro existente y rangos razonables.
 // - Cualquier otra colección queda cerrada.
+//
+// IMPORTANTE: el código familiar NO se guarda en el repositorio (es público).
+// Al publicar en la consola, reemplazar null en familyCode() por el código entre comillas
+// simples, por ejemplo: return 'mi-codigo';  Con null nadie obtiene acceso.
+// Cambiar el código obliga a todos los navegadores a escribir el nuevo.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() {
-      return request.auth != null;
+    function familyCode() {
+      return null;
+    }
+
+    // Sesión registrada con el código familiar vigente.
+    function hasAccess() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/access/$(request.auth.uid)).data.code == familyCode();
     }
 
     function validMember(memberId) {
@@ -55,14 +67,24 @@ service cloud.firestore {
         && validDate(d.createdAt);
     }
 
+    // Registro de acceso de cada sesión: solo se crea con el código correcto
+    // y nadie puede leerlo ni borrarlo desde la página.
+    match /access/{uid} {
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['code'])
+        && request.resource.data.code is string
+        && request.resource.data.code == familyCode();
+    }
+
     match /purchases/{purchaseId} {
-      allow read, delete: if signedIn();
-      allow create, update: if signedIn() && validPurchase(request.resource.data);
+      allow read, delete: if hasAccess();
+      allow create, update: if hasAccess() && validPurchase(request.resource.data);
     }
 
     match /planned/{plannedId} {
-      allow read, delete: if signedIn();
-      allow create, update: if signedIn() && validPlanned(request.resource.data);
+      allow read, delete: if hasAccess();
+      allow create, update: if hasAccess() && validPlanned(request.resource.data);
     }
 
     match /{document=**} {

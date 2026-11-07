@@ -524,6 +524,24 @@ td.status-missed .cell-status {
   }
 }
 
+/* --- Acceso con el código familiar --- */
+
+.access-gate {
+  max-width: 420px;
+  margin: 48px auto;
+}
+
+#access-form {
+  display: grid;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .access-gate {
+    margin: 24px 16px;
+  }
+}
+
 /* --- Año futuro (aún no empieza) --- */
 
 .member-card.status-upcoming {

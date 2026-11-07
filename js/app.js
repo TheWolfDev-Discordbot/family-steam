@@ -572,10 +572,12 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Inicio
+  // Eventos
   // ---------------------------------------------------------------------------
 
   function bindEvents() {
+    $('access-form').addEventListener('submit', onAccessSubmit);
+
     $('year-select').addEventListener('change', (e) => {
       ui.year = Number(e.target.value);
       ui.confirmDeleteId = null;
@@ -618,23 +620,58 @@
     setMessage(node, text);
   }
 
+  function isPermissionDenied(e) {
+    return Boolean(e && e.code && String(e.code).includes('permission-denied'));
+  }
+
   // Traduce los errores de Firebase a mensajes comprensibles.
   function errorText(e) {
     const code = e && e.code ? String(e.code) : '';
-    if (code.includes('permission-denied')) return 'Firebase rechazó la operación: revisa que los datos sean válidos y que las reglas de Firestore estén publicadas.';
+    if (code.includes('permission-denied')) return 'Firebase rechazó la operación: revisa que los datos sean válidos. Si el código familiar cambió, recarga la página.';
     if (code.includes('unavailable') || code.includes('network')) return 'No hay conexión con la base de datos. Revisa tu internet e inténtalo de nuevo.';
     if (code.includes('admin-restricted-operation') || code.includes('operation-not-allowed') || code.includes('configuration-not-found')) return 'El inicio de sesión anónimo no está activado en Firebase (Authentication → Método de acceso → Anónimo).';
     return (e && e.message) || 'Ocurrió un error inesperado.';
   }
 
-  function init() {
-    fillMemberSelect($('purchase-member'), false);
-    fillMemberSelect($('planned-member'), false);
-    fillMemberSelect($('filter-member'), true);
-    resetPurchaseForm();
-    bindEvents();
-    render();
+  // ---------------------------------------------------------------------------
+  // Acceso con el código familiar
+  // ---------------------------------------------------------------------------
 
+  // Muestra la pantalla del código (locked = true) o la página normal.
+  function setLocked(locked) {
+    $('access-section').hidden = !locked;
+    $('app-main').hidden = locked;
+    $('year-picker').hidden = locked;
+    if (locked) $('access-code').focus();
+  }
+
+  async function onAccessSubmit(event) {
+    event.preventDefault();
+    const errorNode = $('access-error');
+    const code = $('access-code').value;
+    setMessage(errorNode, '');
+    if (!code) return setMessage(errorNode, 'Escribe el código familiar.');
+
+    $('access-submit').disabled = true;
+    try {
+      await FS.storage.unlock(code);
+    } catch (e) {
+      $('access-submit').disabled = false;
+      return setMessage(errorNode, isPermissionDenied(e) ? 'Código incorrecto. Revisa mayúsculas y símbolos.' : errorText(e));
+    }
+    $('access-submit').disabled = false;
+    $('access-form').reset();
+    setLocked(false);
+    connect();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Inicio
+  // ---------------------------------------------------------------------------
+
+  // Se suscribe a los datos. Si esta sesión aún no tiene el código familiar,
+  // las reglas rechazan la lectura y se muestra la pantalla del código.
+  function connect() {
     // Si en 10 s no llegan datos, se avisa (sin recargar ni volver a suscribirse).
     showStatus('Conectando con la base de datos…');
     const slowTimer = setTimeout(() => showStatus('La conexión está tardando más de lo normal. Revisa tu internet.', 'error'), 10000);
@@ -648,9 +685,24 @@
       },
       (error) => {
         clearTimeout(slowTimer);
+        if (isPermissionDenied(error)) {
+          showStatus('');
+          setLocked(true);
+          return;
+        }
         showStatus(`No se pudieron cargar los datos. ${errorText(error)}`, 'error');
       }
     );
+  }
+
+  function init() {
+    fillMemberSelect($('purchase-member'), false);
+    fillMemberSelect($('planned-member'), false);
+    fillMemberSelect($('filter-member'), true);
+    resetPurchaseForm();
+    bindEvents();
+    render();
+    connect();
   }
 
   init();

@@ -4,18 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Family Steam</title>
-  <link rel="stylesheet" href="css/styles.css?v=2026110701">
+  <link rel="stylesheet" href="css/styles.css?v=2026110702">
 </head>
 <body>
   <header class="app-header">
     <h1>Family Steam</h1>
-    <label class="year-picker">
+    <label id="year-picker" class="year-picker">
       Año
       <select id="year-select"></select>
     </label>
   </header>
 
-  <main>
+  <!-- Código familiar: se pide una sola vez por navegador, solo si las reglas lo exigen -->
+  <section id="access-section" class="access-gate" hidden>
+    <h2>Acceso familiar</h2>
+    <p class="hint">Escribe el código de la familia para ver y registrar las compras. Solo se pide una vez en este navegador.</p>
+    <form id="access-form" novalidate>
+      <div class="form-row">
+        <label for="access-code">Código familiar</label>
+        <input type="password" id="access-code" autocomplete="current-password" required>
+      </div>
+      <p id="access-error" class="error" hidden></p>
+      <div class="form-actions">
+        <button type="submit" id="access-submit">Entrar</button>
+      </div>
+    </form>
+  </section>
+
+  <main id="app-main">
     <!-- Estado de conexión y errores generales -->
     <p id="status" class="status" role="status" hidden></p>
 
@@ -130,12 +146,12 @@
 
   <!-- Scripts de la app (clásicos, sin módulos). El parámetro ?v= evita que el navegador
        use una versión vieja en caché: cambiarlo en cada publicación. -->
-  <script src="js/firebase-config.js?v=2026110701"></script>
-  <script src="js/config.js?v=2026110701"></script>
-  <script src="js/utils.js?v=2026110701"></script>
-  <script src="js/steam.js?v=2026110701"></script>
-  <script src="js/storage.js?v=2026110701"></script>
-  <script src="js/stats.js?v=2026110701"></script>
-  <script src="js/app.js?v=2026110701"></script>
+  <script src="js/firebase-config.js?v=2026110702"></script>
+  <script src="js/config.js?v=2026110702"></script>
+  <script src="js/utils.js?v=2026110702"></script>
+  <script src="js/steam.js?v=2026110702"></script>
+  <script src="js/storage.js?v=2026110702"></script>
+  <script src="js/stats.js?v=2026110702"></script>
+  <script src="js/app.js?v=2026110702"></script>
 </body>
 </html>
