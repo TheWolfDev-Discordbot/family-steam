@@ -83,7 +83,7 @@ Seguridad (sin cuentas): la página inicia sesión anónima en Firebase. Para le
 
 Diseño: pixel art. Títulos y cifras en Jersey 10, texto en Chakra Petch (Google Fonts). Todo lo pixelado (bordes con esquinas escalonadas por `box-shadow`, paneles recortados con `clip-path`, sombras de tecla) se basa en `--px`. Paletas: morada (por defecto), nocturna, dorada, turquesa, cobalto y lavanda (clara); para agregar una, copiar un bloque `[data-theme]` completo y sumarla a `FS.config.themes`. La única animación es el llenado de la barra de cuota (10 bloques) al llegar los datos o cambiar de año. `design/muestrario.html` es una página local de pruebas de estilo (en `.gitignore`).
 
-Fase actual: funcionalidad completa y diseño pixel aplicado (pendiente de validar por el usuario antes de publicar). Pendientes: cargar la lista de 2025 y restringir la API key de Firebase al dominio de GitHub Pages.
+Fase actual: **versión 1.0 publicada** (commit "Versión 1.0 de la Steam Family"), con funcionalidad y diseño pixel validados por el usuario. Siguiente paso: el usuario la probará con otros miembros de la familia para revisar el uso con varias personas; esperar sus comentarios antes de cambiar algo. Pendientes: cargar la lista de 2025 y restringir la API key de Firebase al dominio de GitHub Pages.
 
 ## Convenciones
 
