@@ -53,7 +53,7 @@ HTML - CSS - JavaScript sería lo principal. Si consideras utilizar algo más pa
 Sin build ni dependencias. Se necesita servirla por http (Firebase Auth no funciona en `file://`).
 En el panel de navegador de Claude Code se usa la configuración `family-steam` de `.claude/launch.json` (ejecuta `tools/serve.ps1`, servidor estático en PowerShell, puerto 5173).
 
-Despliegue: GitHub Pages desde la rama `main` (raíz) del repo `TheWolfDev-Discordbot/family-steam` → `https://thewolfdev-discordbot.github.io/family-steam/`. Basta con hacer push.
+Despliegue: GitHub Pages desde la rama `main` (raíz) del repo `TheWolfDev-Discordbot/family-steam` → `https://thewolfdev-discordbot.github.io/family-steam/`. Basta con hacer push. GitHub Pages cachea los archivos 10 min: al cambiar CSS/JS, actualizar el parámetro `?v=AAAAMMDDNN` de todos los `<link>`/`<script>` propios en `index.html` para que los navegadores descarguen la versión nueva.
 Las reglas de Firestore viven en `firestore.rules`; no se despliegan solas: hay que pegarlas en Firebase Console → Firestore → Reglas.
 
 ## Arquitectura
