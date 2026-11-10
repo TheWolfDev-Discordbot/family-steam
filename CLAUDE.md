@@ -66,7 +66,7 @@ Pruebas: no hay tests automatizados; se prueba en el navegador. La base de Fires
 Página única (`index.html`). Firebase se carga con los SDK "compat" desde gstatic; luego los scripts propios, en orden, cada uno cuelga su módulo del objeto global `window.FS`:
 
 - `js/firebase-config.js` → configuración pública del proyecto Firebase `family-steam`.
-- `js/config.js` → miembros (ids usados también en `firestore.rules`; avatar en `assets/avatars/<id>.png`, con iniciales si falta), cuota mínima anual (400 PEN), rango de años del selector (`yearRange`, 2025–2027) y URL del Worker.
+- `js/config.js` → miembros (ids usados también en `firestore.rules`; avatar en `assets/avatars/<id>.png`, con iniciales si falta), cuota mínima anual (400 PEN), rango de años del selector (`yearRange`, 2026–2027; un año con compras fuera del rango también aparece) y URL del Worker.
 - `js/utils.js` → formato de moneda/fechas, ids, helpers de miembros.
 - `js/icons.js` → íconos pixel definidos como mapas de texto (`#` = pixel) que se convierten a SVG; `fillSlots()` reemplaza los `<span data-icon="...">` del HTML.
 - `js/theme.js` → selector de colores (botón "Colores" del encabezado). Las paletas se listan en `FS.config.themes` y sus colores están en `css/styles.css` (bloques `[data-theme="..."]`, todos con los mismos tokens). La elección se guarda en `localStorage` (`fs-theme`) solo en ese navegador; un `<script>` en el `<head>` la aplica antes de pintar.
@@ -83,7 +83,7 @@ Seguridad (sin cuentas): la página inicia sesión anónima en Firebase. Para le
 
 Diseño: pixel art. Títulos y cifras en Jersey 10, texto en Chakra Petch (Google Fonts). Todo lo pixelado (bordes con esquinas escalonadas por `box-shadow`, paneles recortados con `clip-path`, sombras de tecla) se basa en `--px`. Paletas: morada (por defecto), nocturna, dorada, turquesa, cobalto y lavanda (clara); para agregar una, copiar un bloque `[data-theme]` completo y sumarla a `FS.config.themes`. La única animación es el llenado de la barra de cuota (10 bloques) al llegar los datos o cambiar de año. `design/muestrario.html` es una página local de pruebas de estilo (en `.gitignore`).
 
-Fase actual: **versión 1.0 publicada** (commit "Versión 1.0 de la Steam Family"), con funcionalidad y diseño pixel validados por el usuario. Siguiente paso: el usuario la probará con otros miembros de la familia para revisar el uso con varias personas; esperar sus comentarios antes de cambiar algo. Pendientes: cargar la lista de 2025 y restringir la API key de Firebase al dominio de GitHub Pages.
+Fase actual: **versión 1.0 publicada** (commit "Versión 1.0 de la Steam Family"), con funcionalidad y diseño pixel validados por el usuario. Update 2.0: el selector de años quedó en 2026–2027 (los juegos de 2026 los cargó la familia a mano con sus precios finales: no modificarlos). Siguiente paso: el usuario la probará con otros miembros de la familia para revisar el uso con varias personas; esperar sus comentarios antes de cambiar algo. Pendiente: restringir la API key de Firebase al dominio de GitHub Pages.
 
 ## Convenciones
 
